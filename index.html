@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ANIMUKEZ</title>
+  <title>Stream Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
   <header class="controls">
     <div class="brand">
       <span class="brand-dot"></span>
-      <span class="brand-text">ANIMUKEZ</span>
+      <span class="brand-text">StreamView</span>
     </div>
 
     <div class="inputs">
@@ -62,7 +62,8 @@
         id="stream-frame"
         class="hidden"
         allowfullscreen
-        allow="autoplay; fullscreen"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms"
         frameborder="0"
       ></iframe>
     </section>
