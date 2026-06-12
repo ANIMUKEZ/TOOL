@@ -1,50 +1,68 @@
 /**
  * StreamView — app.js
- * Carga el embed de OK.RU y el chat de Twitch en el sidebar.
+ * Carga el embed de OK.RU / Odysee y el chat de Twitch en el sidebar.
  */
 
 // ── Helpers ────────────────────────────────────────────────────
 
 /**
- * Extrae el ID de vídeo/live de una URL de OK.RU.
- * Formatos soportados:
- *   https://ok.ru/live/123456789
- *   https://ok.ru/video/123456789
- *   https://ok.ru/videoembed/123456789
+ * Detecta la plataforma y construye la URL de embed.
+ * Soporta OK.RU y Odysee.
  */
-function buildOkruEmbedUrl(rawUrl) {
+function buildStreamEmbedUrl(rawUrl) {
   rawUrl = rawUrl.trim();
 
-  // Si ya es un embed, lo usamos directamente
-  if (rawUrl.includes('ok.ru/videoembed/')) {
-    // Asegurar que tiene los params necesarios
-    const url = new URL(rawUrl);
-    url.searchParams.set('autoplay', '1');
-    return url.toString();
+  // ── ODYSEE ──────────────────────────────────────────────────
+  // Formatos:
+  //   https://odysee.com/@Canal:x/titulo:y
+  //   https://odysee.com/$/embed/@Canal:x/titulo:y  (ya es embed)
+  if (rawUrl.includes('odysee.com')) {
+    // Si ya es embed, usar directamente
+    if (rawUrl.includes('/$/embed/')) {
+      return rawUrl;
+    }
+    // Convertir URL normal a embed:
+    // https://odysee.com/@Canal:x/video:y  →  https://odysee.com/$/embed/@Canal:x/video:y
+    try {
+      const u = new URL(rawUrl);
+      // El path de odysee empieza por /@... o /titulo:id
+      const embedPath = u.pathname; // ej: /@Canal:x/titulo:y
+      return `https://odysee.com/$/embed${embedPath}`;
+    } catch (_) {}
+    return null;
   }
 
-  // Intentar extraer el ID numérico del path
-  const match = rawUrl.match(/ok\.ru\/(?:live|video|videoembed)\/(\d+)/i);
-  if (match) {
-    return `https://ok.ru/videoembed/${match[1]}?autoplay=1`;
+  // ── OK.RU ────────────────────────────────────────────────────
+  // Formatos:
+  //   https://ok.ru/live/123456789
+  //   https://ok.ru/video/123456789
+  //   https://ok.ru/videoembed/123456789
+  if (rawUrl.includes('ok.ru')) {
+    if (rawUrl.includes('ok.ru/videoembed/')) {
+      try {
+        const url = new URL(rawUrl);
+        url.searchParams.set('autoplay', '1');
+        return url.toString();
+      } catch (_) { return null; }
+    }
+
+    const match = rawUrl.match(/ok\.ru\/(?:live|video|videoembed)\/(\d+)/i);
+    if (match) return `https://ok.ru/videoembed/${match[1]}?autoplay=1`;
+
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
+      const id = parts[parts.length - 1];
+      if (id && /\d+/.test(id)) return `https://ok.ru/videoembed/${id}?autoplay=1`;
+    } catch (_) {}
+
+    return null;
   }
 
-  // Si el usuario pegó solo el ID numérico
+  // Solo ID numérico → asumimos OK.RU
   if (/^\d+$/.test(rawUrl)) {
     return `https://ok.ru/videoembed/${rawUrl}?autoplay=1`;
   }
-
-  // Fallback: intentar construir desde cualquier URL de ok.ru
-  try {
-    const urlObj = new URL(rawUrl);
-    if (urlObj.hostname.includes('ok.ru')) {
-      const parts = urlObj.pathname.split('/').filter(Boolean);
-      const id = parts[parts.length - 1];
-      if (id && /\d+/.test(id)) {
-        return `https://ok.ru/videoembed/${id}?autoplay=1`;
-      }
-    }
-  } catch (_) {}
 
   return null;
 }
@@ -76,9 +94,9 @@ function loadContent() {
 
   let loaded = false;
 
-  // — OK.RU Stream —
+  // — Stream (OK.RU / Odysee) —
   if (streamInput.trim()) {
-    const embedUrl = buildOkruEmbedUrl(streamInput);
+    const embedUrl = buildStreamEmbedUrl(streamInput);
     if (embedUrl) {
       const frame = document.getElementById('stream-frame');
       const placeholder = document.getElementById('video-placeholder');
@@ -87,7 +105,7 @@ function loadContent() {
       placeholder.classList.add('hidden');
       loaded = true;
     } else {
-      showError('stream-url', 'URL de OK.RU no reconocida. Prueba con: https://ok.ru/live/ID');
+      showError('stream-url', 'URL no reconocida. Soportado: OK.RU y Odysee.');
     }
   }
 
