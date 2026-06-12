@@ -16,18 +16,18 @@ function buildStreamEmbedUrl(rawUrl) {
   // Formatos:
   //   https://odysee.com/@Canal:x/titulo:y
   //   https://odysee.com/$/embed/@Canal:x/titulo:y  (ya es embed)
+  // El embed debe ir URL-encoded para que Safari/Chrome móvil lo resuelvan bien:
+  //   https://odysee.com/%24/embed/%40Canal%3Ax%2Ftitulo%3Ay
   if (rawUrl.includes('odysee.com')) {
-    // Si ya es embed, usar directamente
-    if (rawUrl.includes('/$/embed/')) {
+    // Si ya es embed (encoded o sin encodear), usar directamente
+    if (rawUrl.includes('/$/embed/') || rawUrl.includes('/%24/embed/')) {
       return rawUrl;
     }
-    // Convertir URL normal a embed:
-    // https://odysee.com/@Canal:x/video:y  →  https://odysee.com/$/embed/@Canal:x/video:y
     try {
       const u = new URL(rawUrl);
-      // El path de odysee empieza por /@... o /titulo:id
-      const embedPath = u.pathname; // ej: /@Canal:x/titulo:y
-      return `https://odysee.com/$/embed${embedPath}`;
+      // pathname ej: /@ONIME:b/SAS:4  →  encodeURIComponent lo convierte a %40ONIME%3Ab%2FSAS%3A4
+      const encodedPath = encodeURIComponent(u.pathname.replace(/^\//, ''));
+      return `https://odysee.com/%24/embed/${encodedPath}`;
     } catch (_) {}
     return null;
   }
