@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stream Viewer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER / CONTROLS -->
+  <header class="controls">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-text">StreamView</span>
+    </div>
+
+    <div class="inputs">
+      <div class="input-group">
+        <label for="stream-url">URL del stream (OK.RU)</label>
+        <div class="input-row">
+          <input
+            type="text"
+            id="stream-url"
+            placeholder="https://ok.ru/live/..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="twitch-channel">Canal de Twitch (solo el nombre)</label>
+        <div class="input-row">
+          <input
+            type="text"
+            id="twitch-channel"
+            placeholder="nombre_del_canal"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+
+      <button id="load-btn" onclick="loadContent()">
+        <span class="btn-icon">▶</span> Cargar
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main class="stage">
+    <!-- VIDEO AREA -->
+    <section class="video-wrap">
+      <div class="video-placeholder" id="video-placeholder">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">📡</div>
+          <p>Introduce la URL del stream y pulsa <strong>Cargar</strong></p>
+        </div>
+      </div>
+      <iframe
+        id="stream-frame"
+        class="hidden"
+        allowfullscreen
+        allow="autoplay; fullscreen"
+        frameborder="0"
+      ></iframe>
+    </section>
+
+    <!-- CHAT SIDEBAR -->
+    <aside class="chat-wrap">
+      <div class="chat-header">
+        <span class="live-badge" id="live-badge">CHAT</span>
+        <span id="chat-channel-label">—</span>
+      </div>
+      <div class="chat-placeholder" id="chat-placeholder">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">💬</div>
+          <p>Introduce el nombre del canal de Twitch</p>
+        </div>
+      </div>
+      <iframe
+        id="chat-frame"
+        class="hidden"
+        frameborder="0"
+      ></iframe>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
