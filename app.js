@@ -25,8 +25,8 @@ function buildStreamEmbedUrl(rawUrl) {
       let channelName = parts[parts.length - 1]; 
       
       if (channelName) {
-        // Usamos el subdominio directo para saltar el bloqueo de iframe de la web principal
-        return `https://es.vaughn.live/embed/video/${channelName}`;
+        // Usamos el dominio principal pero añadimos el parámetro allow=true para forzar la carga externa
+        return `https://vaughn.live/embed/video/${channelName}?allow=true`;
       }
     } catch (_) {}
     return null;
