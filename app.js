@@ -1,41 +1,91 @@
 /**
  * StreamView — app.js
- * Carga el embed de OK.RU / Odysee / Vaughn Live y el chat de Twitch en el sidebar.
+ * Carga el embed de múltiples plataformas y el chat de Twitch en el sidebar.
  */
 
 // ── Helpers ────────────────────────────────────────────────────
 
 /**
- * Detecta la plataforma y construye la URL de embed.
- * Soporta OK.RU, Odysee y Vaughn Live.
+ * Detecta la plataforma y construye la URL de embed correcta para el iframe.
  */
 function buildStreamEmbedUrl(rawUrl) {
   rawUrl = rawUrl.trim();
 
-  // ── VAUGHN LIVE ──────────────────────────────────────────────
-  // Formatos:
-  //   https://vaughn.live/nombre_canal
-  //   https://vaughn.live/embed/video/nombre_canal
-  if (rawUrl.includes('vaughn.live')) {
+  // ── VK VIDEO / VK LIVE ─────────────────────────────────────────
+  // Formato: https://live.vkvideo.ru/iserveri/stream/default o generales de vkvideo.ru
+  if (rawUrl.includes('vkvideo.ru') || rawUrl.includes('vk.com')) {
     try {
       const urlObj = new URL(rawUrl);
       const parts = urlObj.pathname.split('/').filter(Boolean);
       
-      // Extrae el nombre del canal limpiando posibles rutas extra
-      let channelName = parts[parts.length - 1]; 
+      // Si sigue la estructura estándar /canal/stream/default, extraemos el canal
+      if (parts.length >= 1) {
+        const channel = parts[0];
+        return `https://vkvideo.ru/video_ext.php?oid=-${channel}&id=live&autoplay=1`;
+      }
+    } catch (_) {}
+    // Fallback general para URLs estructuradas alternativas de VK
+    return rawUrl;
+  }
+
+  // ── SOOP (AFREECA TV) ──────────────────────────────────────────
+  // Formato: https://play.sooplive.com/loltyler1/294793225
+  if (rawUrl.includes('sooplive.com') || rawUrl.includes('afreecatv.com')) {
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
       
-      if (channelName) {
-        // Usamos el dominio principal pero añadimos el parámetro allow=true para forzar la carga externa
-        return `https://vaughn.live/embed/video/${channelName}?allow=true`;
+      const username = parts[0];
+      const no = parts[1];
+      if (username && no) {
+        return `https://play.sooplive.com/${username}/${no}/embed`;
+      } else if (username) {
+        return `https://play.sooplive.com/${username}/embed`;
       }
     } catch (_) {}
     return null;
   }
 
-  // ── ODYSEE ──────────────────────────────────────────────────
-  // Formatos:
-  //   https://odysee.com/@Canal:x/titulo:y
-  //   https://odysee.com/$/embed/@Canal:x/titulo:y
+  // ── TROVO LIVE ─────────────────────────────────────────────────
+  // Formato: https://trovo.live/s/SK1LL_TV
+  if (rawUrl.includes('trovo.live')) {
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
+      
+      // Extrae el nombre de usuario limpio saltándose el parámetro '/s/' si está presente
+      let username = parts[parts.length - 1];
+      if (parts[0] === 's' && parts[1]) {
+        username = parts[1];
+      }
+      
+      if (username) {
+        return `https://trovo.live/embed/${username}?autoplay=1`;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ── GOODGAME.RU ────────────────────────────────────────────────
+  // Formato estándar esperado: https://goodgame.ru/channel/nombre_canal
+  if (rawUrl.includes('goodgame.ru')) {
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
+      
+      let channelName = parts[parts.length - 1];
+      if (parts[0] === 'channel' && parts[1]) {
+        channelName = parts[1];
+      }
+      
+      if (channelName) {
+        return `https://goodgame.ru/player?channel=${channelName}&autoplay=1`;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ── ODYSEE ─────────────────────────────────────────────────────
   if (rawUrl.includes('odysee.com')) {
     if (rawUrl.includes('/$/embed/') || rawUrl.includes('/%24/embed/')) {
       return rawUrl;
@@ -48,10 +98,7 @@ function buildStreamEmbedUrl(rawUrl) {
     return null;
   }
 
-  // ── OK.RU ────────────────────────────────────────────────────
-  // Formatos:
-  //   https://ok.ru/live/123456789
-  //   https://ok.ru/video/123456789
+  // ── OK.RU ──────────────────────────────────────────────────────
   if (rawUrl.includes('ok.ru')) {
     if (rawUrl.includes('ok.ru/videoembed/')) {
       try {
@@ -107,7 +154,6 @@ function loadContent() {
 
   let loaded = false;
 
-  // — Stream (OK.RU / Odysee / Vaughn Live) —
   if (streamInput.trim()) {
     const embedUrl = buildStreamEmbedUrl(streamInput);
     if (embedUrl) {
@@ -118,11 +164,10 @@ function loadContent() {
       placeholder.classList.add('hidden');
       loaded = true;
     } else {
-      showError('stream-url', 'URL no reconocida. Soportado: OK.RU, Odysee y Vaughn Live.');
+      showError('stream-url', 'URL no reconocida o plataforma no soportada.');
     }
   }
 
-  // — Twitch Chat —
   if (twitchInput.trim()) {
     const channel = parseTwitchChannel(twitchInput);
     if (channel) {
