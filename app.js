@@ -10,22 +10,22 @@
  */
 function buildStreamEmbedUrl(rawUrl) {
   rawUrl = rawUrl.trim();
+  if (!rawUrl) return null;
 
   // ── VK VIDEO / VK LIVE ─────────────────────────────────────────
-  // Formato: https://live.vkvideo.ru/iserveri/stream/default o generales de vkvideo.ru
+  // Formato: https://live.vkvideo.ru/iserveri/stream/default
   if (rawUrl.includes('vkvideo.ru') || rawUrl.includes('vk.com')) {
     try {
       const urlObj = new URL(rawUrl);
       const parts = urlObj.pathname.split('/').filter(Boolean);
       
-      // Si sigue la estructura estándar /canal/stream/default, extraemos el canal
       if (parts.length >= 1) {
+        // En tu formato es 'iserveri'
         const channel = parts[0];
         return `https://vkvideo.ru/video_ext.php?oid=-${channel}&id=live&autoplay=1`;
       }
     } catch (_) {}
-    // Fallback general para URLs estructuradas alternativas de VK
-    return rawUrl;
+    return null;
   }
 
   // ── SOOP (AFREECA TV) ──────────────────────────────────────────
@@ -36,9 +36,9 @@ function buildStreamEmbedUrl(rawUrl) {
       const parts = urlObj.pathname.split('/').filter(Boolean);
       
       const username = parts[0];
-      const no = parts[1];
-      if (username && no) {
-        return `https://play.sooplive.com/${username}/${no}/embed`;
+      const streamId = parts[1];
+      if (username && streamId) {
+        return `https://play.sooplive.com/${username}/${streamId}/embed`;
       } else if (username) {
         return `https://play.sooplive.com/${username}/embed`;
       }
@@ -53,10 +53,11 @@ function buildStreamEmbedUrl(rawUrl) {
       const urlObj = new URL(rawUrl);
       const parts = urlObj.pathname.split('/').filter(Boolean);
       
-      // Extrae el nombre de usuario limpio saltándose el parámetro '/s/' si está presente
-      let username = parts[parts.length - 1];
+      let username = null;
       if (parts[0] === 's' && parts[1]) {
         username = parts[1];
+      } else {
+        username = parts[parts.length - 1];
       }
       
       if (username) {
@@ -67,15 +68,17 @@ function buildStreamEmbedUrl(rawUrl) {
   }
 
   // ── GOODGAME.RU ────────────────────────────────────────────────
-  // Formato estándar esperado: https://goodgame.ru/channel/nombre_canal
+  // Formato: https://goodgame.ru/Nikichar#autoplay o https://goodgame.ru/channel/Nikichar
   if (rawUrl.includes('goodgame.ru')) {
     try {
       const urlObj = new URL(rawUrl);
       const parts = urlObj.pathname.split('/').filter(Boolean);
       
-      let channelName = parts[parts.length - 1];
+      let channelName = null;
       if (parts[0] === 'channel' && parts[1]) {
         channelName = parts[1];
+      } else if (parts[0]) {
+        channelName = parts[0];
       }
       
       if (channelName) {
@@ -134,6 +137,7 @@ function buildStreamEmbedUrl(rawUrl) {
  */
 function parseTwitchChannel(input) {
   input = input.trim();
+  if (!input) return null;
   try {
     const url = new URL(input);
     if (url.hostname.includes('twitch.tv')) {
@@ -154,16 +158,19 @@ function loadContent() {
 
   let loaded = false;
 
+  const frame = document.getElementById('stream-frame');
+  const placeholder = document.getElementById('video-placeholder');
+
   if (streamInput.trim()) {
     const embedUrl = buildStreamEmbedUrl(streamInput);
     if (embedUrl) {
-      const frame = document.getElementById('stream-frame');
-      const placeholder = document.getElementById('video-placeholder');
       frame.src = embedUrl;
       frame.classList.remove('hidden');
       placeholder.classList.add('hidden');
       loaded = true;
     } else {
+      frame.classList.add('hidden');
+      placeholder.classList.remove('hidden');
       showError('stream-url', 'URL no reconocida o plataforma no soportada.');
     }
   }
