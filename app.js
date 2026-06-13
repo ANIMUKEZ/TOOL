@@ -1,31 +1,46 @@
 /**
  * StreamView — app.js
- * Carga el embed de OK.RU / Odysee y el chat de Twitch en el sidebar.
+ * Carga el embed de OK.RU / Odysee / Vaughn Live y el chat de Twitch en el sidebar.
  */
 
 // ── Helpers ────────────────────────────────────────────────────
 
 /**
  * Detecta la plataforma y construye la URL de embed.
- * Soporta OK.RU y Odysee.
+ * Soporta OK.RU, Odysee y Vaughn Live.
  */
 function buildStreamEmbedUrl(rawUrl) {
   rawUrl = rawUrl.trim();
+
+  // ── VAUGHN LIVE ──────────────────────────────────────────────
+  // Formatos:
+  //   https://vaughn.live/nombre_canal
+  //   https://vaughn.live/embed/video/nombre_canal (ya es embed)
+  if (rawUrl.includes('vaughn.live')) {
+    if (rawUrl.includes('/embed/video/')) {
+      return rawUrl;
+    }
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
+      const channelName = parts[0]; // El primer elemento tras el dominio es el canal
+      if (channelName) {
+        return `https://vaughn.live/embed/video/${channelName}`;
+      }
+    } catch (_) {}
+    return null;
+  }
 
   // ── ODYSEE ──────────────────────────────────────────────────
   // Formatos:
   //   https://odysee.com/@Canal:x/titulo:y
   //   https://odysee.com/$/embed/@Canal:x/titulo:y  (ya es embed)
-  // El embed debe ir URL-encoded para que Safari/Chrome móvil lo resuelvan bien:
-  //   https://odysee.com/%24/embed/%40Canal%3Ax%2Ftitulo%3Ay
   if (rawUrl.includes('odysee.com')) {
-    // Si ya es embed (encoded o sin encodear), usar directamente
     if (rawUrl.includes('/$/embed/') || rawUrl.includes('/%24/embed/')) {
       return rawUrl;
     }
     try {
       const u = new URL(rawUrl);
-      // pathname ej: /@ONIME:b/SAS:4  →  encodeURIComponent lo convierte a %40ONIME%3Ab%2FSAS%3A4
       const encodedPath = encodeURIComponent(u.pathname.replace(/^\//, ''));
       return `https://odysee.com/%24/embed/${encodedPath}`;
     } catch (_) {}
@@ -36,7 +51,6 @@ function buildStreamEmbedUrl(rawUrl) {
   // Formatos:
   //   https://ok.ru/live/123456789
   //   https://ok.ru/video/123456789
-  //   https://ok.ru/videoembed/123456789
   if (rawUrl.includes('ok.ru')) {
     if (rawUrl.includes('ok.ru/videoembed/')) {
       try {
@@ -72,7 +86,6 @@ function buildStreamEmbedUrl(rawUrl) {
  */
 function parseTwitchChannel(input) {
   input = input.trim();
-  // Si pegan la URL completa
   try {
     const url = new URL(input);
     if (url.hostname.includes('twitch.tv')) {
@@ -81,7 +94,6 @@ function parseTwitchChannel(input) {
     }
   } catch (_) {}
 
-  // Si es solo el nombre
   const clean = input.replace(/^@/, '').split('/')[0].trim();
   return clean || null;
 }
@@ -94,7 +106,7 @@ function loadContent() {
 
   let loaded = false;
 
-  // — Stream (OK.RU / Odysee) —
+  // — Stream (OK.RU / Odysee / Vaughn Live) —
   if (streamInput.trim()) {
     const embedUrl = buildStreamEmbedUrl(streamInput);
     if (embedUrl) {
@@ -105,7 +117,7 @@ function loadContent() {
       placeholder.classList.add('hidden');
       loaded = true;
     } else {
-      showError('stream-url', 'URL no reconocida. Soportado: OK.RU y Odysee.');
+      showError('stream-url', 'URL no reconocida. Soportado: OK.RU, Odysee y Vaughn Live.');
     }
   }
 
@@ -113,7 +125,6 @@ function loadContent() {
   if (twitchInput.trim()) {
     const channel = parseTwitchChannel(twitchInput);
     if (channel) {
-      // Twitch requiere que el parent sea el dominio donde está alojado el chat
       const parent = window.location.hostname || 'localhost';
       const chatUrl = `https://www.twitch.tv/embed/${channel}/chat?darkpopout&parent=${parent}`;
 
@@ -144,7 +155,6 @@ function showError(inputId, msg) {
   input.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.2)';
   input.title = msg;
 
-  // Limpiar el error al escribir
   input.addEventListener('input', function clear() {
     input.style.borderColor = '';
     input.style.boxShadow = '';
@@ -162,14 +172,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Restaurar estado desde localStorage (opcional)
   const savedStream  = localStorage.getItem('sv_stream');
   const savedChannel = localStorage.getItem('sv_channel');
   if (savedStream)  document.getElementById('stream-url').value = savedStream;
   if (savedChannel) document.getElementById('twitch-channel').value = savedChannel;
 });
 
-// Guardar en localStorage al cargar
 const _originalLoad = loadContent;
 window.loadContent = function() {
   const s = document.getElementById('stream-url').value;
