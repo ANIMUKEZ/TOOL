@@ -12,42 +12,9 @@ function buildStreamEmbedUrl(rawUrl) {
   rawUrl = rawUrl.trim();
   if (!rawUrl) return null;
 
-  // ── VK VIDEO / VK LIVE ─────────────────────────────────────────
-  // Formato: https://live.vkvideo.ru/iserveri/stream/default
-  if (rawUrl.includes('vkvideo.ru') || rawUrl.includes('vk.com')) {
-    try {
-      const urlObj = new URL(rawUrl);
-      const parts = urlObj.pathname.split('/').filter(Boolean);
-      
-      if (parts.length >= 1) {
-        // En tu formato es 'iserveri'
-        const channel = parts[0];
-        return `https://vkvideo.ru/video_ext.php?oid=-${channel}&id=live&autoplay=1`;
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  // ── SOOP (AFREECA TV) ──────────────────────────────────────────
-  // Formato: https://play.sooplive.com/loltyler1/294793225
-  if (rawUrl.includes('sooplive.com') || rawUrl.includes('afreecatv.com')) {
-    try {
-      const urlObj = new URL(rawUrl);
-      const parts = urlObj.pathname.split('/').filter(Boolean);
-      
-      const username = parts[0];
-      const streamId = parts[1];
-      if (username && streamId) {
-        return `https://play.sooplive.com/${username}/${streamId}/embed`;
-      } else if (username) {
-        return `https://play.sooplive.com/${username}/embed`;
-      }
-    } catch (_) {}
-    return null;
-  }
-
   // ── TROVO LIVE ─────────────────────────────────────────────────
   // Formato: https://trovo.live/s/SK1LL_TV
+  // Para evitar que rechace la conexion, usamos la url incrustable limpia 'player.trovo.live'
   if (rawUrl.includes('trovo.live')) {
     try {
       const urlObj = new URL(rawUrl);
@@ -61,7 +28,7 @@ function buildStreamEmbedUrl(rawUrl) {
       }
       
       if (username) {
-        return `https://trovo.live/embed/${username}?autoplay=1`;
+        return `https://player.trovo.live/embed/${username}?autoplay=1`;
       }
     } catch (_) {}
     return null;
@@ -83,6 +50,39 @@ function buildStreamEmbedUrl(rawUrl) {
       
       if (channelName) {
         return `https://goodgame.ru/player?channel=${channelName}&autoplay=1`;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ── VK VIDEO / VK LIVE ─────────────────────────────────────────
+  // Formato: https://live.vkvideo.ru/iserveri/stream/default
+  if (rawUrl.includes('vkvideo.ru') || rawUrl.includes('vk.com')) {
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
+      
+      if (parts.length >= 1) {
+        const channel = parts[0];
+        return `https://vkvideo.ru/video_ext.php?oid=-${channel}&id=live&autoplay=1`;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // ── SOOP (AFREECA TV) ──────────────────────────────────────────
+  // Formato: https://play.sooplive.com/loltyler1/294793225
+  if (rawUrl.includes('sooplive.com') || rawUrl.includes('afreecatv.com')) {
+    try {
+      const urlObj = new URL(rawUrl);
+      const parts = urlObj.pathname.split('/').filter(Boolean);
+      
+      const username = parts[0];
+      const streamId = parts[1];
+      if (username && streamId) {
+        return `https://play.sooplive.com/${username}/${streamId}/embed`;
+      } else if (username) {
+        return `https://play.sooplive.com/${username}/embed`;
       }
     } catch (_) {}
     return null;
