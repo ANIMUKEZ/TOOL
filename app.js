@@ -15,17 +15,18 @@ function buildStreamEmbedUrl(rawUrl) {
   // ── VAUGHN LIVE ──────────────────────────────────────────────
   // Formatos:
   //   https://vaughn.live/nombre_canal
-  //   https://vaughn.live/embed/video/nombre_canal (ya es embed)
+  //   https://vaughn.live/embed/video/nombre_canal
   if (rawUrl.includes('vaughn.live')) {
-    if (rawUrl.includes('/embed/video/')) {
-      return rawUrl;
-    }
     try {
       const urlObj = new URL(rawUrl);
       const parts = urlObj.pathname.split('/').filter(Boolean);
-      const channelName = parts[0]; // El primer elemento tras el dominio es el canal
+      
+      // Extrae el nombre del canal limpiando posibles rutas extra
+      let channelName = parts[parts.length - 1]; 
+      
       if (channelName) {
-        return `https://vaughn.live/embed/video/${channelName}`;
+        // Retorna el reproductor nativo adaptado para stream continuo externo
+        return `https://vaughn.live/embed/video/${channelName}?as_stream=1`;
       }
     } catch (_) {}
     return null;
@@ -34,7 +35,7 @@ function buildStreamEmbedUrl(rawUrl) {
   // ── ODYSEE ──────────────────────────────────────────────────
   // Formatos:
   //   https://odysee.com/@Canal:x/titulo:y
-  //   https://odysee.com/$/embed/@Canal:x/titulo:y  (ya es embed)
+  //   https://odysee.com/$/embed/@Canal:x/titulo:y
   if (rawUrl.includes('odysee.com')) {
     if (rawUrl.includes('/$/embed/') || rawUrl.includes('/%24/embed/')) {
       return rawUrl;
