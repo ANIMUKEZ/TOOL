@@ -25,8 +25,8 @@ function buildStreamEmbedUrl(rawUrl) {
       let channelName = parts[parts.length - 1]; 
       
       if (channelName) {
-        // Retorna el reproductor nativo adaptado para stream continuo externo
-        return `https://vaughn.live/embed/video/${channelName}?as_stream=1`;
+        // Usamos el subdominio directo para saltar el bloqueo de iframe de la web principal
+        return `https://es.vaughn.live/embed/video/${channelName}`;
       }
     } catch (_) {}
     return null;
